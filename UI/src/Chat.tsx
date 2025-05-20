@@ -35,7 +35,7 @@ function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto">
+    <div className="flex flex-col h-[100dvh] max-w-3xl mx-auto">
       <main className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
           <CardContent className="flex-1 p-4 pt-4 overflow-y-auto">
@@ -82,7 +82,7 @@ function Chat() {
             </div>
           </CardContent>
 
-          <div className="border-t p-4">
+          <div className="border-t p-4 sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
               <Textarea
                 placeholder="Send a message..."
@@ -182,28 +182,33 @@ const ItemsList = ({ result = [] }) => {
 
         return (
           <Card key={id} className="overflow-hidden">
-            <div className="flex gap-4 p-4">
-              <img 
-                className="h-20 w-20 rounded-md object-cover border"
-                src={image_url}
-                alt={name}
-              />
-              <div className="flex flex-col flex-1 gap-2">
-                <h3 className="font-semibold leading-none">{name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-                <div className="flex items-center justify-between mt-auto gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs rounded-full bg-primary/10 text-primary px-2 py-1 font-medium">
-                      Deposit ₹{deposit}
-                    </span>
-                    <span className="font-semibold text-lg">
-                      ₹{price_per_day}/day
-                    </span>
+            <div className="flex flex-col sm:flex-row gap-4 p-4">
+              <div className="w-full sm:w-auto">
+                <img 
+                  className="w-full sm:w-32 sm:h-32 rounded-lg object-cover border aspect-video sm:aspect-square"
+                  src={image_url}
+                  alt={name}
+                />
+              </div>
+              <div className="flex flex-col flex-1 gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight mb-1">{name}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-auto">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Price:</span>
+                      <span className="font-bold text-lg">₹{price_per_day}/day</span>
+                    </div>
+                    <div className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                      Deposit: ₹{deposit}
+                    </div>
                   </div>
                   <Button
-                    variant="default"
-                    size="default"
-                    className="px-8 font-semibold hover:scale-105 transition-transform bg-teal-500 hover:bg-teal-600 text-teal-100"
+                    size="lg"
+                    className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-medium px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
                     onClick={() => alert('Reservation feature coming soon!')}
                   >
                     Reserve Now
