@@ -12,6 +12,7 @@ type Bindings = {
   DB_URL: string,
   GEMINI_API_KEY:string,
   SUPABASE_URL: string,
+  GATEWAY_URL:string
 }
 
 
@@ -21,7 +22,8 @@ app.use('/*', cors())
 app.post('/items', async (c) => {
   
   const google = createGoogleGenerativeAI({
-    apiKey:c.env.GEMINI_API_KEY
+    apiKey:c.env.GEMINI_API_KEY,
+    baseURL:c.env.GATEWAY_URL,
   });
   const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
   const { id, messages } = await c.req.json()
