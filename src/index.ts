@@ -1,9 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { streamText, tool } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod';
-import postgres from "postgres";
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@supabase/supabase-js';
 

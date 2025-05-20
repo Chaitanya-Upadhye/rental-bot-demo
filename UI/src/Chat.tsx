@@ -10,7 +10,7 @@ import { Badge } from "./components/ui/badge";
 
 function Chat() {
   const { messages, input, handleInputChange, handleSubmit, setInput } = useChat({
-    api: 'http://localhost:8787/items',
+    api: import.meta.env.VITE_API_URL,
     maxSteps: 5
   });
 
