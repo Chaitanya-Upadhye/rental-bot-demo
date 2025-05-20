@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { streamText, tool, generateObject } from 'ai'
+import { streamText, tool } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod';
 import postgres from "postgres";
@@ -21,17 +21,8 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('/*', cors())
 
 app.post('/items', async (c) => {
-  const sql = postgres(c.env.DB_URL, {
-
-    max: 5,
-
-    fetch_types: false,
-  });
-  const openai = createOpenAI({
-    apiKey: c.env.OPENAI_API_KEY!,
-  });
+  
   const google = createGoogleGenerativeAI({
-    // custom settings
     apiKey:c.env.GEMINI_API_KEY
   });
   const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
