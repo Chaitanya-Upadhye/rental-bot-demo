@@ -33,7 +33,7 @@ app.post('/items', async (c) => {
     model: google('gemini-2.0-flash-lite'),
     maxSteps:5,
     system:`
-     - you help users find products they want to rent!
+     - you help users find products they want to rent and reserve for a specific time period!
         - keep your responses limited to a sentence.
         - DO NOT output lists.
         - make use of the tools to search for products.
@@ -49,6 +49,7 @@ app.post('/items', async (c) => {
           - ask for the date range or duration, present your assumptions if the input is vague
           - search for the product
           - assume the same date range for the rental period for subsequent searches unless the user specifies otherwise
+          - Once the user is happy with the product, ask for their phone number and full name to reserve the product
     `,
 
     messages,
