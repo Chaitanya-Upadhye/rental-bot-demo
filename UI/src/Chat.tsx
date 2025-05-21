@@ -1,18 +1,38 @@
 import { motion } from "framer-motion";
 import { useChat } from '@ai-sdk/react';
-import { BotIcon, SendIcon, UserIcon } from "lucide-react";
+import { BotIcon, SendIcon, UserIcon, CalendarIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
 import { Textarea } from "./components/ui/textarea";
 import { Badge } from "./components/ui/badge";
+import { useEffect, useRef } from "react";
 
 
 function Chat() {
-  const { messages, input, handleInputChange, handleSubmit, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, append } = useChat({
     api: import.meta.env.VITE_API_URL,
     maxSteps: 5
   });
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  async function addMessage(msg:string, data={}) {
+    append({
+      role: "user",
+      content: msg,
+    }, {
+      data
+    });
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -26,13 +46,6 @@ function Chat() {
     "Do you have any drones that I can rent?",
     "I need a PS5 on rent"
   ];
-
-  const handleQuestionClick = (question: string) => {
-    setInput(question);
-    // Create a synthetic form event
-    const formEvent = new Event('submit', { bubbles: true }) as unknown as React.FormEvent<HTMLFormElement>;
-    handleSubmit(formEvent);
-  };
 
   return (
     <div className="flex flex-col h-[100dvh] max-w-3xl mx-auto">
@@ -60,7 +73,7 @@ function Chat() {
                             key={index}
                             variant="secondary"
                             className="cursor-pointer hover:bg-secondary/80 transition-colors"
-                            onClick={() => handleQuestionClick(question)}
+                            onClick={() => addMessage(question)}
                           >
                             {question}
                           </Badge>
@@ -75,10 +88,12 @@ function Chat() {
                     key={message.id}
                     role={message.role}
                     content={message.content}
-                    toolInvocations={message.toolInvocations} 
+                    toolInvocations={message.toolInvocations}
+                    append={addMessage}
                   />
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
           </CardContent>
 
@@ -107,10 +122,12 @@ const MessagePreview = ({
   role,
   content,
   toolInvocations,
+  append,
 }: {
   role: string;
   content: string | ReactNode;
   toolInvocations: Array<any> | undefined;
+  append: (message: string, data: any) => void;
 }) => {
   const isUser = role === "user";
 
@@ -147,7 +164,9 @@ const MessagePreview = ({
                 return (
                   <div key={toolCallId}>
                     {toolName === "searchItems" ? (
-                      <ItemsList result={result} />
+                      <ItemsList append={append} result={result} />
+                    ) : toolName === "generatePaymentLink" ? (
+                      <PaymentLinkCard {...result} />
                     ) : null}
                   </div>
                 );
@@ -172,7 +191,13 @@ const MessagePreview = ({
   );
 };
 
-const ItemsList = ({ result = [] }) => {
+const ItemsList = ({ 
+  result = [], 
+  append 
+}: { 
+  result: any[];
+  append: (message: string, data: any) => void;
+}) => {
   if (!result.length) return null;
   
   return (
@@ -209,7 +234,7 @@ const ItemsList = ({ result = [] }) => {
                   <Button
                     size="lg"
                     className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-medium px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-                    onClick={() => alert('Reservation feature coming soon!')}
+                    onClick={() => append(`I want to go with ${name}`, { itemId: id })}
                   >
                     Reserve Now
                   </Button>
@@ -221,6 +246,93 @@ const ItemsList = ({ result = [] }) => {
       })}
     </div>
   );
-}
+};
+
+const PaymentLinkCard = ({ 
+  link, 
+  startDate, 
+  endDate, 
+  item 
+}: { 
+  link: string;
+  startDate: string;
+  endDate: string;
+  item: {
+    name: string;
+    description: string | null;
+    image_url: string | null;
+    price_per_day: number;
+    deposit: number | null;
+  };
+}) => {
+  const formattedStartDate = new Date(startDate).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+  
+  const formattedEndDate = new Date(endDate).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+  
+  const durationDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+  const totalAmount = item.price_per_day * durationDays;
+
+  return (
+    <Card>
+      <div className="p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {item.image_url && (
+            <img 
+              src={item.image_url} 
+              alt={item.name}
+              className="w-full sm:w-32 h-32 rounded-lg object-cover border"
+            />
+          )}
+          <div className="flex-1 space-y-2">
+            <h3 className="font-semibold text-lg">{item.name}</h3>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CalendarIcon className="h-4 w-4" />
+              <span>{formattedStartDate} - {formattedEndDate}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Duration:</span>
+            <span className="font-medium">{durationDays} days</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Price per day:</span>
+            <span className="font-medium">₹{item.price_per_day}</span>
+          </div>
+          {item.deposit && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Security deposit:</span>
+              <span className="font-medium">₹{item.deposit}</span>
+            </div>
+          )}
+          <div className="pt-2 border-t">
+            <div className="flex justify-between">
+              <span className="font-medium">Total amount:</span>
+              <span className="font-bold text-lg">₹{totalAmount}</span>
+            </div>
+          </div>
+        </div>
+
+        <Button 
+          className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+          size="lg"
+          onClick={() => window.open(link, '_blank')}
+        >
+          Proceed to Payment
+        </Button>
+      </div>
+    </Card>
+  );
+};
 
 export default Chat;

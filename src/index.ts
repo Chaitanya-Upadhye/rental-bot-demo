@@ -4,6 +4,7 @@ import { streamText, tool } from 'ai'
 import { z } from 'zod';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '../database.types';
 
 
 type Bindings = {
@@ -18,15 +19,20 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 app.use('/*', cors())
-
+type IntentMeta={
+  data:{
+    intent:'RESERVE'|`GENERATE_PAYMENT_LINK`,
+    id:string,
+  }
+}
 app.post('/items', async (c) => {
   
   const google = createGoogleGenerativeAI({
     apiKey:c.env.GEMINI_API_KEY,
     baseURL:c.env.GATEWAY_URL,
   });
-  const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
-  const { id, messages } = await c.req.json()
+  const supabase = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+  const { id, messages,data }:{id:string,messages:any[],data?:IntentMeta} = await c.req.json()
 
 
   const result = streamText({
@@ -49,13 +55,42 @@ app.post('/items', async (c) => {
           - ask for the date range or duration, present your assumptions if the input is vague
           - search for the product
           - assume the same date range for the rental period for subsequent searches unless the user specifies otherwise
-          - Once the user is happy with the product, ask for their phone number and full name to reserve the product
+          - Once the user has selected a product to reserve, generate the payment link.
+
     `,
 
     messages,
     onError: (e) => { console.log(e) },
 
     tools: {
+      generatePaymentLink: tool({
+        description: "Tool that generates a payment link for the user to pay for the reservation.",
+        parameters: z.object({
+          id: z.string().describe('ID of the item to be reserved.'),
+          startDate: z.string().describe('Start date for the rental period as provided by the user previously.'),
+          endDate: z.string().describe('End date for the rental period, provided by the user previously.'),
+          duration: z.number().describe('Duration of the rental period in days, based on duration or dates provided by th user previously.'),
+        
+        }),
+        execute:async({ startDate,endDate,id ,duration}) => {
+          const { data, error } = await supabase
+            .from('items')
+            .select()
+            .eq('id', id);
+
+          if (error) {
+            console.error(error);
+            throw new Error('Error generating payment link');
+          }
+          let resp={
+            link:`https://example.com/payment/${id}?amount=${data[0].price_per_day * duration}`,
+            startDate,endDate,
+            item:data[0]
+          };
+          console.log(resp);
+          return resp
+        }
+      }),
      searchItems: tool({
         description: "Tool that searches for products based on user input.",
         parameters: z.object({
