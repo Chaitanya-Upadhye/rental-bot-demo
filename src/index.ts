@@ -41,11 +41,14 @@ app.post('/items', async (c) => {
         - ask for any details you don't know - make sure you have the product category, date range or time period the user is looking to rent the product before searching.
         - ask follow up questions to nudge user into the optimal flow
         - confirm the exact date range if the input is vague like 'next weekend' or 'next two days', always present your assumptions to the user first.
-        - make sure the start date is not in the past.
+        - make the user select the duration again if the start date is before ${new Date().toLocaleDateString()}.
         - after every tool call, pretend you're showing the result to the user and keep your response limited to a phrase.
 
         - here's the optimal flow
-          - search for products based on users query
+          - ask for the product category
+          - ask for the date range or duration, present your assumptions if the input is vague
+          - search for the product
+          - assume the same date range for the rental period for subsequent searches unless the user specifies otherwise
     `,
 
     messages,
